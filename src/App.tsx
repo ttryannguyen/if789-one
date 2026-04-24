@@ -55,7 +55,6 @@ function MatrixRain() {
       height = canvas.height = window.innerHeight;
       drops = [];
 
-      // dense, but still readable — this is closer to the version you liked
       for (let x = 0; x < width; x += columnGap) {
         drops.push(makeDrop(x));
         drops.push(makeDrop(x + Math.random() * 3));
@@ -80,7 +79,6 @@ function MatrixRain() {
     const draw = () => {
       const mouse = mouseRef.current;
 
-      // keeps trails, but avoids the smeared/glowy look from the last version
       ctx.fillStyle = "rgba(0, 0, 0, 0.075)";
       ctx.fillRect(0, 0, width, height);
 
@@ -92,7 +90,6 @@ function MatrixRain() {
         const dy = drop.y - mouse.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // small hover disturbance only
         if (distance < 55) {
           const push = (55 - distance) / 55;
           drop.offset += dx > 0 ? push * 0.45 : -push * 0.45;
@@ -143,6 +140,26 @@ function MatrixRain() {
   return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0 }} />;
 }
 
+function WindowCloseButton() {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 18,
+        height: 18,
+        background: "#c0c0c0",
+        border: "1px solid black",
+        color: "black",
+        boxShadow: "inset -1px -1px 0 #808080, inset 1px 1px 0 #ffffff",
+      }}
+    >
+      ×
+    </span>
+  );
+}
+
 function ErrorWindow({ data, index, onEnter }: { data: WindowData; index: number; onEnter: () => void }) {
   const isTakeover = data.type === "takeover";
 
@@ -177,29 +194,10 @@ function ErrorWindow({ data, index, onEnter }: { data: WindowData; index: number
         }}
       >
         <span>{isTakeover ? "SYSTEM FAILURE" : "IF789 ERROR"}</span>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 18,
-            height: 18,
-            background: "#c0c0c0",
-            border: "1px solid black",
-            color: "black",
-            boxShadow: "inset -1px -1px 0 #808080, inset 1px 1px 0 #ffffff",
-          }}
-        >
-          ×
-        </span>
+        <WindowCloseButton />
       </div>
 
-      <div
-        style={{
-          padding: isTakeover ? "28px 32px 30px" : "11px",
-          textAlign: "center",
-        }}
-      >
+      <div style={{ padding: isTakeover ? "28px 32px 30px" : "11px", textAlign: "center" }}>
         <div
           style={{
             display: "inline-flex",
@@ -254,11 +252,269 @@ function ErrorWindow({ data, index, onEnter }: { data: WindowData; index: number
   );
 }
 
+function MessageWindow() {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "42%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(520px, calc(100vw - 32px))",
+        background: "#c0c0c0",
+        border: "2px solid black",
+        boxShadow:
+          "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 8px 8px 0 rgba(0,0,0,0.65)",
+        fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
+        color: "black",
+        zIndex: 200,
+      }}
+    >
+      <div
+        style={{
+          background: "#000080",
+          color: "white",
+          padding: "3px 7px",
+          fontSize: "0.9rem",
+          fontWeight: 900,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>IF789 MESSAGE</span>
+        <WindowCloseButton />
+      </div>
+
+      <div style={{ padding: "34px 32px", textAlign: "center" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 34,
+            height: 34,
+            marginBottom: 18,
+            border: "2px solid black",
+            fontSize: "1.75rem",
+            fontWeight: 900,
+            lineHeight: 1,
+          }}
+        >
+          !
+        </div>
+
+        <div
+          style={{
+            fontSize: "clamp(2.4rem, 8vw, 4.5rem)",
+            fontWeight: 900,
+            letterSpacing: "-0.06em",
+            lineHeight: 0.9,
+          }}
+        >
+          IF789
+        </div>
+
+        <div style={{ marginTop: 18, fontSize: "1rem", letterSpacing: "0.1em", fontWeight: 900 }}>
+          COMING SOON
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CountdownWindow({ countdown, justKidding }: { countdown: number; justKidding: boolean }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "64%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(430px, calc(100vw - 40px))",
+        background: "#c0c0c0",
+        border: "2px solid black",
+        boxShadow:
+          "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 6px 6px 0 rgba(0,0,0,0.65)",
+        fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
+        color: "black",
+        zIndex: 210,
+      }}
+    >
+      <div
+        style={{
+          background: "#000080",
+          color: "white",
+          padding: "3px 7px",
+          fontSize: "0.85rem",
+          fontWeight: 900,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>{justKidding ? "IF789 NOTICE" : "CRITICAL ERROR"}</span>
+        <WindowCloseButton />
+      </div>
+
+      <div style={{ padding: "24px", textAlign: "center" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 30,
+            height: 30,
+            marginBottom: 14,
+            border: "2px solid black",
+            fontSize: "1.5rem",
+            fontWeight: 900,
+            lineHeight: 1,
+          }}
+        >
+          !
+        </div>
+
+        <div style={{ fontSize: "1rem", letterSpacing: "0.08em", fontWeight: 900 }}>
+          {justKidding ? "JUST KIDDING" : `SELF-DESTRUCTING IN ${countdown} SECONDS`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FileExplorer() {
+  const [activeTab, setActiveTab] = useState("Downloads");
+  const [currentFolder, setCurrentFolder] = useState("Downloads");
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(760px, calc(100vw - 36px))",
+        height: "min(520px, calc(100vh - 36px))",
+        background: "#c0c0c0",
+        border: "2px solid black",
+        boxShadow:
+          "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 10px 10px 0 rgba(0,0,0,0.7)",
+        fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
+        color: "black",
+        zIndex: 300,
+      }}
+    >
+      <div
+        style={{
+          height: 28,
+          background: "#000080",
+          color: "white",
+          padding: "3px 7px",
+          fontSize: "0.9rem",
+          fontWeight: 900,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>File Explorer - Downloads</span>
+        <WindowCloseButton />
+      </div>
+
+      <div style={{ display: "flex", height: "calc(100% - 28px)" }}>
+        <aside
+          style={{
+            width: 190,
+            borderRight: "2px solid #808080",
+            padding: 10,
+            background: "#d6d6d6",
+            boxShadow: "inset -1px -1px 0 #ffffff, inset 1px 1px 0 #808080",
+            fontSize: "0.8rem",
+          }}
+        >
+          {["Desktop", "Documents", "Downloads", "Pictures", "Music", "Recycle Bin"].map((item) => (
+            <div
+              key={item}
+              onClick={() => {
+                setActiveTab(item);
+                setCurrentFolder(item);
+              }}
+              style={{
+                padding: "7px 8px",
+                marginBottom: 4,
+                cursor: "pointer",
+                background: activeTab === item ? "#000080" : "transparent",
+                color: activeTab === item ? "white" : "black",
+                border: activeTab === item ? "1px dotted white" : "1px solid transparent",
+              }}
+              style={{
+                padding: "7px 8px",
+                marginBottom: 4,
+                background: activeTab === item ? "#000080" : "transparent",
+                color: activeTab === item ? "white" : "black",
+                border: activeTab === item ? "1px dotted white" : "1px solid transparent",
+              }}
+            >
+              {item}
+            </div>
+          ))}
+        </aside>
+
+        <section style={{ flex: 1, padding: 12 }}>
+          <div
+            style={{
+              marginBottom: 10,
+              padding: "6px 8px",
+              background: "white",
+              border: "2px solid black",
+              boxShadow: "inset -2px -2px 0 #ffffff, inset 2px 2px 0 #808080",
+              fontSize: "0.8rem",
+            }}
+          >
+            C:\Users\IF789\{currentFolder}
+          </div>
+
+          <div
+            style={{
+              height: "calc(100% - 42px)",
+              background: "white",
+              border: "2px solid black",
+              boxShadow: "inset -2px -2px 0 #ffffff, inset 2px 2px 0 #808080",
+              padding: 18,
+            }}
+          >
+            {currentFolder === "Downloads" && (
+            <div onDoubleClick={() => setCurrentFolder("shop")} style={{ width: 92, textAlign: "center", cursor: "pointer", userSelect: "none" }}>
+              <div
+                style={{
+                  width: 54,
+                  height: 38,
+                  margin: "0 auto 8px",
+                  background: "#f5d76e",
+                  border: "2px solid black",
+                  boxShadow: "inset -2px -2px 0 #b59b35, inset 2px 2px 0 #fff4a8",
+                }}
+              />
+              <div style={{ fontSize: "0.82rem", fontWeight: 900 }}>shop</div>
+            </div>
+          )}
+
+          {currentFolder === "shop" && (
+            <div style={{ fontSize: "0.9rem", opacity: 0.7 }}>empty folder</div>
+          )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [windows, setWindows] = useState<WindowData[]>([]);
   const [entered, setEntered] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [justKidding, setJustKidding] = useState(false);
+  const [showExplorer, setShowExplorer] = useState(false);
 
   useEffect(() => {
     let count = 0;
@@ -292,6 +548,7 @@ export default function App() {
 
     setCountdown(5);
     setJustKidding(false);
+    setShowExplorer(false);
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -306,6 +563,16 @@ export default function App() {
 
     return () => clearInterval(interval);
   }, [entered]);
+
+  useEffect(() => {
+    if (!justKidding) return;
+
+    const timeout = setTimeout(() => {
+      setShowExplorer(true);
+    }, 1200);
+
+    return () => clearTimeout(timeout);
+  }, [justKidding]);
 
   return (
     <div
@@ -323,169 +590,9 @@ export default function App() {
         windows.map((w, i) => <ErrorWindow key={w.id} data={w} index={i} onEnter={() => setEntered(true)} />)
       ) : (
         <>
-          <div
-            style={{
-              position: "absolute",
-              top: "42%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "min(520px, calc(100vw - 32px))",
-              background: "#c0c0c0",
-              border: "2px solid black",
-              boxShadow:
-                "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 8px 8px 0 rgba(0,0,0,0.65)",
-              fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
-              color: "black",
-              zIndex: 200,
-            }}
-          >
-            <div
-              style={{
-                background: "#000080",
-                color: "white",
-                padding: "3px 7px",
-                fontSize: "0.9rem",
-                fontWeight: 900,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>IF789 MESSAGE</span>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 18,
-                  height: 18,
-                  background: "#c0c0c0",
-                  border: "1px solid black",
-                  color: "black",
-                  boxShadow: "inset -1px -1px 0 #808080, inset 1px 1px 0 #ffffff",
-                }}
-              >
-                ×
-              </span>
-            </div>
-
-            <div style={{ padding: "34px 32px", textAlign: "center" }}>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 34,
-                  height: 34,
-                  marginBottom: 18,
-                  border: "2px solid black",
-                  fontSize: "1.75rem",
-                  fontWeight: 900,
-                  lineHeight: 1,
-                }}
-              >
-                !
-              </div>
-
-              <div
-                style={{
-                  fontSize: "clamp(2.4rem, 8vw, 4.5rem)",
-                  fontWeight: 900,
-                  letterSpacing: "-0.06em",
-                  lineHeight: 0.9,
-                }}
-              >
-                IF789
-              </div>
-
-              <div
-                style={{
-                  marginTop: 18,
-                  fontSize: "1rem",
-                  letterSpacing: "0.1em",
-                  fontWeight: 900,
-                }}
-              >
-                COMING SOON
-              </div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              position: "absolute",
-              top: "64%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "min(430px, calc(100vw - 40px))",
-              background: "#c0c0c0",
-              border: "2px solid black",
-              boxShadow:
-                "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 6px 6px 0 rgba(0,0,0,0.65)",
-              fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
-              color: "black",
-              zIndex: 210,
-            }}
-          >
-            <div
-              style={{
-                background: "#000080",
-                color: "white",
-                padding: "3px 7px",
-                fontSize: "0.85rem",
-                fontWeight: 900,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>{justKidding ? "IF789 NOTICE" : "CRITICAL ERROR"}</span>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 18,
-                  height: 18,
-                  background: "#c0c0c0",
-                  border: "1px solid black",
-                  color: "black",
-                  boxShadow: "inset -1px -1px 0 #808080, inset 1px 1px 0 #ffffff",
-                }}
-              >
-                ×
-              </span>
-            </div>
-
-            <div style={{ padding: "24px 24px", textAlign: "center" }}>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 30,
-                  height: 30,
-                  marginBottom: 14,
-                  border: "2px solid black",
-                  fontSize: "1.5rem",
-                  fontWeight: 900,
-                  lineHeight: 1,
-                }}
-              >
-                !
-              </div>
-
-              <div
-                style={{
-                  fontSize: "1rem",
-                  letterSpacing: "0.08em",
-                  fontWeight: 900,
-                }}
-              >
-                {justKidding ? "JUST KIDDING" : `SELF-DESTRUCTING IN ${countdown} SECONDS`}
-              </div>
-            </div>
-          </div>
+          <MessageWindow />
+          <CountdownWindow countdown={countdown} justKidding={justKidding} />
+          {showExplorer && <FileExplorer />}
         </>
       )}
     </div>
