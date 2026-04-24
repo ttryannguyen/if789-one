@@ -447,13 +447,6 @@ function FileExplorer() {
                 color: activeTab === item ? "white" : "black",
                 border: activeTab === item ? "1px dotted white" : "1px solid transparent",
               }}
-              style={{
-                padding: "7px 8px",
-                marginBottom: 4,
-                background: activeTab === item ? "#000080" : "transparent",
-                color: activeTab === item ? "white" : "black",
-                border: activeTab === item ? "1px dotted white" : "1px solid transparent",
-              }}
             >
               {item}
             </div>
