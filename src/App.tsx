@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function IF789() {
+export default function App() {
   const [entered, setEntered] = useState(false);
   const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
