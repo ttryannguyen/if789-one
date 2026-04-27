@@ -827,16 +827,20 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!entered) return;
+useEffect(() => {
+  if (!entered) return;
 
-    setCountdown(5);
-    setJustKidding(false);
-    setShowMessage(true);
+  setCountdown(5);
+  setJustKidding(false);
+  setShowMessage(true);
+  setShowCountdown(false); // ⬅️ start hidden
+  setShowExplorer(false);
+  setExplorerUnlocked(false);
+  setExplorerStartFolder("Downloads");
+
+  // ⬇️ wait 1 second after COMING SOON appears
+  const delayStart = setTimeout(() => {
     setShowCountdown(true);
-    setShowExplorer(false);
-    setExplorerUnlocked(false);
-    setExplorerStartFolder("Downloads");
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -848,9 +852,10 @@ export default function App() {
         return prev - 1;
       });
     }, 1000);
+  }, 1000); // ⬅️ THIS is the 1 second delay
 
-    return () => clearInterval(interval);
-  }, [entered]);
+  return () => clearTimeout(delayStart);
+}, [entered]);
 
   useEffect(() => {
     if (!justKidding) return;
