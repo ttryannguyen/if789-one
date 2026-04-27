@@ -7,169 +7,91 @@ type WindowData = {
   type: "normal" | "takeover";
 };
 
-function MatrixRain() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const mouseRef = useRef({ x: -9999, y: -9999 });
+type DragData = {
+  id: string;
+  offsetX: number;
+  offsetY: number;
+};
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let width = 0;
-    let height = 0;
-    let animationFrame = 0;
-
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    const brand = "IF789";
-    const fontSize = 11;
-    const columnGap = 6;
-
-    type Drop = {
-      x: number;
-      y: number;
-      speed: number;
-      text: string;
-      brand: boolean;
-      offset: number;
-    };
-
-    let drops: Drop[] = [];
-
-    const makeDrop = (x: number): Drop => {
-      const isBrand = Math.random() > 0.955;
-      return {
-        x,
-        y: Math.random() * height,
-        speed: 1.05 + Math.random() * 1.65,
-        text: isBrand ? brand : letters[Math.floor(Math.random() * letters.length)],
-        brand: isBrand,
-        offset: 0,
-      };
-    };
-
-    const setup = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      drops = [];
-
-      for (let x = 0; x < width; x += columnGap) {
-        drops.push(makeDrop(x));
-        drops.push(makeDrop(x + Math.random() * 3));
-        drops.push(makeDrop(x + Math.random() * 6));
-      }
-
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, width, height);
-    };
-
-    const drawVerticalText = (text: string, x: number, y: number, color: string, alpha = 1) => {
-      ctx.fillStyle = color;
-      ctx.globalAlpha = alpha;
-
-      for (let i = 0; i < text.length; i++) {
-        ctx.fillText(text[i], x, y + i * fontSize);
-      }
-
-      ctx.globalAlpha = 1;
-    };
-
-    const draw = () => {
-      const mouse = mouseRef.current;
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.075)";
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.font = `${fontSize}px 'Lucida Console', 'Courier New', monospace`;
-      ctx.textBaseline = "top";
-
-      for (const drop of drops) {
-        const dx = drop.x - mouse.x;
-        const dy = drop.y - mouse.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 55) {
-          const push = (55 - distance) / 55;
-          drop.offset += dx > 0 ? push * 0.45 : -push * 0.45;
-        } else {
-          drop.offset *= 0.92;
-        }
-
-        const x = drop.x + drop.offset;
-        const y = drop.y;
-
-        if (drop.brand) {
-          drawVerticalText(drop.text, x, y, Math.random() > 0.92 ? "#eaffea" : "#2dff77", 0.9);
-        } else {
-          const bright = Math.random() > 0.9;
-          drawVerticalText(drop.text, x, y, bright ? "#d8ffd8" : "#00c84a", bright ? 0.95 : 0.72);
-        }
-
-        drop.y += drop.speed;
-
-        if (drop.y > height + fontSize * 8) {
-          const newDrop = makeDrop(drop.x);
-          drop.y = -Math.random() * height * 0.25;
-          drop.speed = newDrop.speed;
-          drop.text = newDrop.text;
-          drop.brand = newDrop.brand;
-        }
-      }
-
-      animationFrame = requestAnimationFrame(draw);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-
-    setup();
-    window.addEventListener("resize", setup);
-    window.addEventListener("mousemove", handleMouseMove);
-    animationFrame = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(animationFrame);
-      window.removeEventListener("resize", setup);
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0 }} />;
+function WindowsXpBackground() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 0,
+        overflow: "hidden",
+        background: "black",
+      }}
+    >
+      <img
+        src="/window%20xp.png"
+        alt="Windows XP"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          pointerEvents: "none",
+        }}
+      />
+    </div>
+  );
 }
 
-function WindowCloseButton() {
+function WindowCloseButton({ onClick }: { onClick: () => void }) {
   return (
-    <span
+    <button
+      type="button"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         width: 18,
         height: 18,
+        padding: 0,
         background: "#c0c0c0",
         border: "1px solid black",
         color: "black",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        fontWeight: 900,
+        lineHeight: 1,
+        position: "relative",
+        zIndex: 999,
+        pointerEvents: "auto",
         boxShadow: "inset -1px -1px 0 #808080, inset 1px 1px 0 #ffffff",
       }}
     >
       ×
-    </span>
+    </button>
   );
 }
 
-function ErrorWindow({ data, index, onEnter }: { data: WindowData; index: number; onEnter: () => void }) {
+function ErrorWindow({
+  data,
+  index,
+  onEnter,
+  onDragStart,
+}: {
+  data: WindowData;
+  index: number;
+  onEnter: () => void;
+  onDragStart: (id: number, e: React.MouseEvent) => void;
+}) {
   const isTakeover = data.type === "takeover";
 
   return (
     <div
       style={{
         position: "absolute",
-        top: isTakeover ? "50%" : data.y,
-        left: isTakeover ? "50%" : data.x,
-        transform: isTakeover ? "translate(-50%, -50%)" : "none",
+        top: data.y,
+        left: data.x,
         width: isTakeover ? "min(640px, calc(100vw - 32px))" : "235px",
         background: "#c0c0c0",
         border: "2px solid black",
@@ -182,6 +104,7 @@ function ErrorWindow({ data, index, onEnter }: { data: WindowData; index: number
       }}
     >
       <div
+        onMouseDown={(e) => onDragStart(data.id, e)}
         style={{
           background: "#000080",
           color: "white",
@@ -191,10 +114,11 @@ function ErrorWindow({ data, index, onEnter }: { data: WindowData; index: number
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          cursor: "move",
+          userSelect: "none",
         }}
       >
         <span>{isTakeover ? "SYSTEM FAILURE" : "IF789 ERROR"}</span>
-        <WindowCloseButton />
       </div>
 
       <div style={{ padding: isTakeover ? "28px 32px 30px" : "11px", textAlign: "center" }}>
@@ -252,7 +176,7 @@ function ErrorWindow({ data, index, onEnter }: { data: WindowData; index: number
   );
 }
 
-function MessageWindow() {
+function MessageWindow({ onClose }: { onClose: () => void }) {
   return (
     <div
       style={{
@@ -283,7 +207,7 @@ function MessageWindow() {
         }}
       >
         <span>IF789 MESSAGE</span>
-        <WindowCloseButton />
+        <WindowCloseButton onClick={onClose} />
       </div>
 
       <div style={{ padding: "34px 32px", textAlign: "center" }}>
@@ -354,7 +278,6 @@ function CountdownWindow({ countdown, justKidding }: { countdown: number; justKi
         }}
       >
         <span>{justKidding ? "IF789 NOTICE" : "CRITICAL ERROR"}</span>
-        <WindowCloseButton />
       </div>
 
       <div style={{ padding: "24px", textAlign: "center" }}>
@@ -383,56 +306,359 @@ function CountdownWindow({ countdown, justKidding }: { countdown: number; justKi
   );
 }
 
-function FileExplorer() {
-  const [activeTab, setActiveTab] = useState("Downloads");
-  const [currentFolder, setCurrentFolder] = useState("Downloads");
+function DesktopExplorerShortcut({ onOpen }: { onOpen: () => void }) {
+  return (
+    <div
+      onClick={onOpen}
+      style={{
+        position: "absolute",
+        left: 26,
+        top: 24,
+        width: 92,
+        textAlign: "center",
+        color: "white",
+        fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
+        fontWeight: 900,
+        textShadow: "1px 1px 2px black",
+        cursor: "pointer",
+        zIndex: 150,
+        userSelect: "none",
+      }}
+    >
+      <div
+        style={{
+          width: 52,
+          height: 38,
+          margin: "0 auto 6px",
+          background: "#f5d76e",
+          border: "2px solid black",
+          boxShadow: "inset -2px -2px 0 #b59b35, inset 2px 2px 0 #fff4a8",
+        }}
+      />
+      <div style={{ fontSize: "0.78rem" }}>File Explorer</div>
+    </div>
+  );
+}
+
+function Taskbar({
+  onOpenExplorer,
+  explorerOpen,
+  explorerUnlocked,
+}: {
+  onOpenExplorer: (folder?: string) => void;
+  explorerOpen: boolean;
+  explorerUnlocked: boolean;
+}) {
+  const [startOpen, setStartOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const date = now.toLocaleDateString([], { month: "numeric", day: "numeric", year: "2-digit" });
+  const cleanQuery = query.toLowerCase().trim();
+  const searchResults = [
+    { label: "File Explorer", folder: "Downloads", keywords: "file explorer files" },
+    { label: "Downloads", folder: "Downloads", keywords: "downloads download" },
+    { label: "shop", folder: "shop", keywords: "shop store products" },
+  ].filter((item) => cleanQuery === "" || item.label.toLowerCase().includes(cleanQuery) || item.keywords.includes(cleanQuery));
+
   return (
     <div
       style={{
         position: "absolute",
-        top: "50%",
-        left: "50%",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 38,
+        background: "#245edb",
+        borderTop: "2px solid #6aa0ff",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)",
+        display: "flex",
+        alignItems: "center",
+        fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
+        zIndex: 500,
+      }}
+    >
+      {startOpen && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: 38,
+            width: 310,
+            background: "#c0c0c0",
+            border: "2px solid black",
+            boxShadow: "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 6px 6px 0 rgba(0,0,0,0.55)",
+            color: "black",
+          }}
+        >
+          <div
+            style={{
+              background: "#000080",
+              color: "white",
+              padding: "7px 10px",
+              fontWeight: 900,
+              fontSize: "0.9rem",
+            }}
+          >
+            IF789 START
+          </div>
+
+          <div style={{ padding: 10 }}>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search files..."
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "7px 8px",
+                border: "2px solid black",
+                background: "white",
+                fontFamily: "inherit",
+                fontSize: "0.8rem",
+                boxShadow: "inset -2px -2px 0 #ffffff, inset 2px 2px 0 #808080",
+              }}
+            />
+
+            <div style={{ marginTop: 10 }}>
+              {searchResults.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  disabled={!explorerUnlocked}
+                  onClick={() => {
+                    if (!explorerUnlocked) return;
+                    onOpenExplorer(item.folder);
+                    setStartOpen(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px",
+                    marginBottom: 6,
+                    border: "1px dotted black",
+                    background: explorerUnlocked ? "white" : "#d6d6d6",
+                    color: explorerUnlocked ? "black" : "#777",
+                    cursor: explorerUnlocked ? "pointer" : "not-allowed",
+                    fontFamily: "inherit",
+                    textAlign: "left",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 28,
+                      height: 20,
+                      background: "#f5d76e",
+                      border: "2px solid black",
+                      boxShadow: "inset -1px -1px 0 #b59b35, inset 1px 1px 0 #fff4a8",
+                    }}
+                  />
+                  <span>{explorerUnlocked ? item.label : `${item.label} locked`}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setStartOpen((v) => !v)}
+        style={{
+          height: 32,
+          marginLeft: 4,
+          padding: "0 14px",
+          border: "2px solid #0c3b8f",
+          borderRadius: "0 10px 10px 0",
+          background: "linear-gradient(#4bd34b, #138a13)",
+          color: "white",
+          fontWeight: 900,
+          fontFamily: "inherit",
+          textShadow: "1px 1px 1px black",
+          cursor: "pointer",
+        }}
+      >
+        start
+      </button>
+
+      {explorerOpen && (
+        <button
+          type="button"
+          onClick={() => onOpenExplorer()}
+          style={{
+            height: 28,
+            marginLeft: 8,
+            padding: "0 12px",
+            minWidth: 160,
+            border: "1px solid #123c91",
+            background: "#3c77e8",
+            color: "white",
+            fontFamily: "inherit",
+            fontWeight: 900,
+            textAlign: "left",
+            boxShadow: "inset -1px -1px 0 #174aa8, inset 1px 1px 0 #8fb7ff",
+            cursor: "pointer",
+          }}
+        >
+          ▣ File Explorer
+        </button>
+      )}
+
+      <div style={{ marginLeft: "auto", height: "100%", display: "flex", alignItems: "center" }}>
+        <div
+          style={{
+            height: "100%",
+            minWidth: 92,
+            padding: "0 10px",
+            background: "#0b8be8",
+            borderLeft: "1px solid #6bbcff",
+            color: "white",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "0.68rem",
+            lineHeight: 1.1,
+            textShadow: "1px 1px 1px black",
+            boxSizing: "border-box",
+          }}
+        >
+          <div>{time}</div>
+          <div>{date}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FileExplorer({ onClose, startFolder = "Downloads" }: { onClose: () => void; startFolder?: string }) {
+  const [activeTab, setActiveTab] = useState(startFolder === "shop" ? "Downloads" : startFolder);
+  const [currentFolder, setCurrentFolder] = useState(startFolder);
+  const [isMobile, setIsMobile] = useState(false);
+  const [position, setPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const fileDragRef = useRef({ dragging: false, offsetX: 0, offsetY: 0 });
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (!fileDragRef.current.dragging) return;
+      setPosition({
+        x: e.clientX - fileDragRef.current.offsetX,
+        y: e.clientY - fileDragRef.current.offsetY,
+      });
+    };
+
+    const up = () => {
+      fileDragRef.current.dragging = false;
+    };
+
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+    };
+  }, []);
+
+  const startFileDrag = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    fileDragRef.current = {
+      dragging: true,
+      offsetX: e.clientX - position.x,
+      offsetY: e.clientY - position.y,
+    };
+  };
+
+  useEffect(() => {
+    setCurrentFolder(startFolder);
+    setActiveTab(startFolder === "shop" ? "Downloads" : startFolder);
+  }, [startFolder]);
+
+  const folders = ["Desktop", "Documents", "Downloads", "Pictures", "Music", "Recycle Bin"];
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: isMobile ? "50%" : position.y,
+        left: isMobile ? "50%" : position.x,
         transform: "translate(-50%, -50%)",
-        width: "min(760px, calc(100vw - 36px))",
-        height: "min(520px, calc(100vh - 36px))",
+        width: isMobile ? "calc(100vw - 18px)" : "min(760px, calc(100vw - 36px))",
+        height: isMobile ? "calc(100vh - 26px)" : "min(520px, calc(100vh - 36px))",
         background: "#c0c0c0",
         border: "2px solid black",
+        boxSizing: "border-box",
         boxShadow:
           "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 10px 10px 0 rgba(0,0,0,0.7)",
         fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
         color: "black",
         zIndex: 300,
+        overflow: "hidden",
       }}
     >
       <div
+        onMouseDown={startFileDrag}
         style={{
           height: 28,
           background: "#000080",
           color: "white",
           padding: "3px 7px",
-          fontSize: "0.9rem",
+          fontSize: isMobile ? "0.72rem" : "0.9rem",
           fontWeight: 900,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          boxSizing: "border-box",
+          cursor: isMobile ? "default" : "move",
+          userSelect: "none",
         }}
       >
-        <span>File Explorer - Downloads</span>
-        <WindowCloseButton />
+        <span>{`File Explorer - ${currentFolder}`}</span>
+        <WindowCloseButton onClick={onClose} />
       </div>
 
-      <div style={{ display: "flex", height: "calc(100% - 28px)" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          height: "calc(100% - 28px)",
+          minHeight: 0,
+        }}
+      >
         <aside
           style={{
-            width: 190,
-            borderRight: "2px solid #808080",
-            padding: 10,
+            width: isMobile ? "100%" : 190,
+            height: isMobile ? 86 : "auto",
+            flexShrink: 0,
+            borderRight: isMobile ? "none" : "2px solid #808080",
+            borderBottom: isMobile ? "2px solid #808080" : "none",
+            padding: 8,
             background: "#d6d6d6",
+            boxSizing: "border-box",
             boxShadow: "inset -1px -1px 0 #ffffff, inset 1px 1px 0 #808080",
-            fontSize: "0.8rem",
+            fontSize: isMobile ? "0.68rem" : "0.8rem",
+            display: isMobile ? "grid" : "block",
+            gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : undefined,
+            gap: isMobile ? 4 : undefined,
+            overflow: "auto",
           }}
         >
-          {["Desktop", "Documents", "Downloads", "Pictures", "Music", "Recycle Bin"].map((item) => (
+          {folders.map((item) => (
             <div
               key={item}
               onClick={() => {
@@ -440,12 +666,17 @@ function FileExplorer() {
                 setCurrentFolder(item);
               }}
               style={{
-                padding: "7px 8px",
-                marginBottom: 4,
+                padding: isMobile ? "6px 4px" : "7px 8px",
+                marginBottom: isMobile ? 0 : 4,
                 cursor: "pointer",
                 background: activeTab === item ? "#000080" : "transparent",
                 color: activeTab === item ? "white" : "black",
                 border: activeTab === item ? "1px dotted white" : "1px solid transparent",
+                textAlign: isMobile ? "center" : "left",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                boxSizing: "border-box",
               }}
             >
               {item}
@@ -453,48 +684,66 @@ function FileExplorer() {
           ))}
         </aside>
 
-        <section style={{ flex: 1, padding: 12 }}>
+        <section
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: isMobile ? 8 : 12,
+            minHeight: 0,
+            boxSizing: "border-box",
+            overflow: "hidden",
+          }}
+        >
           <div
             style={{
-              marginBottom: 10,
+              marginBottom: 8,
               padding: "6px 8px",
               background: "white",
               border: "2px solid black",
               boxShadow: "inset -2px -2px 0 #ffffff, inset 2px 2px 0 #808080",
-              fontSize: "0.8rem",
+              fontSize: isMobile ? "0.62rem" : "0.8rem",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              boxSizing: "border-box",
             }}
           >
-            C:\Users\IF789\{currentFolder}
+            {`C:\\Users\\IF789\\${currentFolder}`}
           </div>
 
           <div
             style={{
-              height: "calc(100% - 42px)",
+              height: "calc(100% - 40px)",
               background: "white",
               border: "2px solid black",
               boxShadow: "inset -2px -2px 0 #ffffff, inset 2px 2px 0 #808080",
-              padding: 18,
+              padding: isMobile ? 12 : 18,
+              boxSizing: "border-box",
+              overflow: "auto",
             }}
           >
             {currentFolder === "Downloads" && (
-            <div onDoubleClick={() => setCurrentFolder("shop")} style={{ width: 92, textAlign: "center", cursor: "pointer", userSelect: "none" }}>
               <div
-                style={{
-                  width: 54,
-                  height: 38,
-                  margin: "0 auto 8px",
-                  background: "#f5d76e",
-                  border: "2px solid black",
-                  boxShadow: "inset -2px -2px 0 #b59b35, inset 2px 2px 0 #fff4a8",
-                }}
-              />
-              <div style={{ fontSize: "0.82rem", fontWeight: 900 }}>shop</div>
-            </div>
-          )}
+                onClick={() => setCurrentFolder("shop")}
+                style={{ width: 92, textAlign: "center", cursor: "pointer", userSelect: "none" }}
+              >
+                <div
+                  style={{
+                    width: 54,
+                    height: 38,
+                    margin: "0 auto 8px",
+                    background: "#f5d76e",
+                    border: "2px solid black",
+                    boxShadow: "inset -2px -2px 0 #b59b35, inset 2px 2px 0 #fff4a8",
+                  }}
+                />
+                <div style={{ fontSize: "0.82rem", fontWeight: 900 }}>shop</div>
+              </div>
+            )}
 
-          {currentFolder === "shop" && (
-            <div style={{ fontSize: "0.9rem", opacity: 0.7 }}>empty folder</div>
-          )}
+            {currentFolder === "shop" && (
+              <div style={{ fontSize: "0.9rem", opacity: 0.7 }}>empty folder</div>
+            )}
           </div>
         </section>
       </div>
@@ -507,7 +756,12 @@ export default function App() {
   const [entered, setEntered] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [justKidding, setJustKidding] = useState(false);
+  const [showMessage, setShowMessage] = useState(true);
+  const [showCountdown, setShowCountdown] = useState(true);
   const [showExplorer, setShowExplorer] = useState(false);
+  const [explorerUnlocked, setExplorerUnlocked] = useState(false);
+  const [explorerStartFolder, setExplorerStartFolder] = useState("Downloads");
+  const dragRef = useRef<DragData | null>(null);
 
   useEffect(() => {
     let count = 0;
@@ -518,12 +772,21 @@ export default function App() {
         const cascade = count < 10;
         const baseX = 28;
         const baseY = 30;
+        const isTakeover = count === maxWindows - 1;
 
         const next: WindowData = {
           id: Date.now() + count,
-          x: cascade ? baseX + count * 24 : Math.random() * Math.max(1, window.innerWidth - 250),
-          y: cascade ? baseY + count * 20 : Math.random() * Math.max(1, window.innerHeight - 145),
-          type: count === maxWindows - 1 ? "takeover" : "normal",
+          x: isTakeover
+            ? Math.max(16, window.innerWidth / 2 - 320)
+            : cascade
+              ? baseX + count * 24
+              : Math.random() * Math.max(1, window.innerWidth - 250),
+          y: isTakeover
+            ? Math.max(16, window.innerHeight / 2 - 140)
+            : cascade
+              ? baseY + count * 20
+              : Math.random() * Math.max(1, window.innerHeight - 145),
+          type: isTakeover ? "takeover" : "normal",
         };
 
         return [...prev, next];
@@ -537,11 +800,43 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+
+      const { id, offsetX, offsetY } = dragRef.current;
+
+      setWindows((prev) =>
+        prev.map((win) =>
+          String(win.id) === id
+            ? { ...win, x: e.clientX - offsetX, y: e.clientY - offsetY }
+            : win
+        )
+      );
+    };
+
+    const onMouseUp = () => {
+      dragRef.current = null;
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!entered) return;
 
     setCountdown(5);
     setJustKidding(false);
+    setShowMessage(true);
+    setShowCountdown(true);
     setShowExplorer(false);
+    setExplorerUnlocked(false);
+    setExplorerStartFolder("Downloads");
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -560,12 +855,35 @@ export default function App() {
   useEffect(() => {
     if (!justKidding) return;
 
-    const timeout = setTimeout(() => {
+    // show explorer after message
+    const openExplorer = setTimeout(() => {
+      setExplorerStartFolder("Downloads");
       setShowExplorer(true);
+      setExplorerUnlocked(true);
+      setShowMessage(false);
     }, 1200);
 
-    return () => clearTimeout(timeout);
+    // hide countdown window after "just kidding"
+    const hideCountdown = setTimeout(() => {
+      setShowCountdown(false);
+    }, 1800);
+
+    return () => {
+      clearTimeout(openExplorer);
+      clearTimeout(hideCountdown);
+    };
   }, [justKidding]);
+
+  const startDrag = (id: number, e: React.MouseEvent) => {
+    const win = windows.find((item) => item.id === id);
+    if (!win) return;
+
+    dragRef.current = {
+      id: String(id),
+      offsetX: e.clientX - win.x,
+      offsetY: e.clientY - win.y,
+    };
+  };
 
   return (
     <div
@@ -577,15 +895,43 @@ export default function App() {
         background: "black",
       }}
     >
-      <MatrixRain />
+      <WindowsXpBackground />
+
+      {entered && explorerUnlocked && (
+        <DesktopExplorerShortcut onOpen={() => setShowExplorer(true)} />
+      )}
+
+      {entered && explorerUnlocked && (
+        <Taskbar
+          onOpenExplorer={(folder) => {
+            setExplorerStartFolder(folder || "Downloads");
+            setShowExplorer(true);
+          }}
+          explorerOpen={showExplorer}
+          explorerUnlocked={explorerUnlocked}
+        />
+      )}
 
       {!entered ? (
-        windows.map((w, i) => <ErrorWindow key={w.id} data={w} index={i} onEnter={() => setEntered(true)} />)
+        windows.map((w, i) => (
+          <ErrorWindow
+            key={w.id}
+            data={w}
+            index={i}
+            onEnter={() => setEntered(true)}
+            onDragStart={startDrag}
+          />
+        ))
       ) : (
         <>
-          <MessageWindow />
-          <CountdownWindow countdown={countdown} justKidding={justKidding} />
-          {showExplorer && <FileExplorer />}
+          {showMessage && <MessageWindow onClose={() => setShowMessage(false)} />}
+          {showCountdown && <CountdownWindow countdown={countdown} justKidding={justKidding} />}
+          {showExplorer && (
+            <FileExplorer
+              startFolder={explorerStartFolder}
+              onClose={() => setShowExplorer(false)}
+            />
+          )}
         </>
       )}
     </div>
