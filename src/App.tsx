@@ -25,13 +25,13 @@ function WindowsXpBackground() {
       }}
     >
       <img
-        src="/window%20xp.png"
+        src="/window%20xp.png" // IMPORTANT: space encoded
         alt="Windows XP"
         style={{
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          pointerEvents: "none",
+          pointerEvents: "none", // allows clicking through
         }}
       />
     </div>
@@ -539,7 +539,215 @@ function Taskbar({
   );
 }
 
-function FileExplorer({ onClose, startFolder = "Downloads" }: { onClose: () => void; startFolder?: string }) {
+function GameWindow({ onClose }: { onClose: () => void }) {
+  const [score, setScore] = useState(0);
+  const [playerY, setPlayerY] = useState(0);
+  const [obstacleX, setObstacleX] = useState(430);
+  const [gameOver, setGameOver] = useState(false);
+
+  const playerYRef = useRef(0);
+  const velocityRef = useRef(0);
+
+  // 🟢 NEW JUMP (gravity based)
+  const jump = () => {
+    if (gameOver) return;
+
+    if (playerYRef.current === 0) {
+      velocityRef.current = 16;
+    }
+  };
+
+  // ⌨️ keyboard
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      e.preventDefault();
+      jump();
+    };
+
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [gameOver]);
+
+  // 🌍 GRAVITY LOOP
+  useEffect(() => {
+    if (gameOver) return;
+
+    const gravity = setInterval(() => {
+      velocityRef.current -= .9;
+
+      let nextY = playerYRef.current + velocityRef.current;
+
+      if (nextY <= 0) {
+        nextY = 0;
+        velocityRef.current = 0;
+      }
+
+      playerYRef.current = nextY;
+      setPlayerY(nextY);
+    }, 16);
+
+    return () => clearInterval(gravity);
+  }, [gameOver]);
+
+  // 🚧 OBSTACLES + SPEED SCALE
+  useEffect(() => {
+    if (gameOver) return;
+
+    const loop = setInterval(() => {
+      setObstacleX((prev) => {
+        let next = prev - (6 + score * 0.4); // 🔥 speed scaling
+
+        const playerLeft = 70;
+        const playerRight = 104;
+        const obstacleLeft = next;
+        const obstacleRight = next + 22;
+
+        const isTouchingX =
+          obstacleRight > playerLeft && obstacleLeft < playerRight;
+
+        const playerLowEnoughToHit = playerYRef.current < 28;
+
+        if (isTouchingX && playerLowEnoughToHit) {
+          setGameOver(true);
+          return next;
+        }
+
+        if (next < -30) {
+          setScore((s) => s + 1);
+          next = 430 + Math.random() * 80;
+        }
+
+        return next;
+      });
+    }, 35);
+
+    return () => clearInterval(loop);
+  }, [gameOver, score]);
+
+  const resetGame = () => {
+    setScore(0);
+    setObstacleX(430);
+    setPlayerY(0);
+    playerYRef.current = 0;
+    velocityRef.current = 0;
+    setGameOver(false);
+  };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "min(520px, calc(100vw - 32px))",
+        background: "#c0c0c0",
+        border: "2px solid black",
+        boxShadow:
+          "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 8px 8px 0 rgba(0,0,0,0.65)",
+        fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
+        color: "black",
+        zIndex: 360,
+      }}
+    >
+      <div
+        style={{
+          background: "#000080",
+          color: "white",
+          padding: "3px 7px",
+          fontSize: "0.9rem",
+          fontWeight: 900,
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>game.exe</span>
+        <WindowCloseButton onClick={onClose} />
+      </div>
+
+      <div style={{ padding: 16 }}>
+        <div
+          tabIndex={0}
+          onClick={(e) => {
+            e.currentTarget.focus();
+            jump();
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            jump();
+          }}
+          style={{
+            height: 230,
+            background: "black",
+            border: "2px solid black",
+            position: "relative",
+            overflow: "hidden",
+            color: "#00ff66",
+          }}
+        >
+          <div style={{ position: "absolute", top: 10, left: 12 }}>
+            SCORE: {score}
+          </div>
+
+          {/* PLAYER */}
+          <div
+            style={{
+              position: "absolute",
+              left: 70,
+              bottom: 48 + playerY,
+              width: 34,
+              height: 34,
+              background: gameOver ? "red" : "#00ff66",
+            }}
+          />
+
+          {/* OBSTACLE */}
+          <div
+            style={{
+              position: "absolute",
+              left: obstacleX,
+              bottom: 48,
+              width: 22,
+              height: 38,
+              background: "#00ff66",
+            }}
+          />
+
+          {/* GROUND */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 42,
+              height: 2,
+              width: "100%",
+              background: "#00ff66",
+            }}
+          />
+
+          {gameOver && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0,0,0,0.7)",
+              }}
+            >
+              <div>GAME OVER</div>
+              <button onClick={resetGame}>RESTART</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FileExplorer({ onClose, startFolder = "Downloads", onOpenGame }: { onClose: () => void; startFolder?: string; onOpenGame: () => void }) {
   const [activeTab, setActiveTab] = useState(startFolder === "shop" ? "Downloads" : startFolder);
   const [currentFolder, setCurrentFolder] = useState(startFolder);
   const [isMobile, setIsMobile] = useState(false);
@@ -598,13 +806,15 @@ function FileExplorer({ onClose, startFolder = "Downloads" }: { onClose: () => v
         top: isMobile ? "50%" : position.y,
         left: isMobile ? "50%" : position.x,
         transform: "translate(-50%, -50%)",
-        width: isMobile ? "calc(100vw - 18px)" : "min(760px, calc(100vw - 36px))",
-        height: isMobile ? "calc(100vh - 26px)" : "min(520px, calc(100vh - 36px))",
+        width: isMobile ? "90vw" : "min(760px, calc(100vw - 36px))",
+        height: isMobile ? "80vh" : "min(520px, calc(100vh - 36px))",
+        borderRadius: isMobile ? 10 : 0,
         background: "#c0c0c0",
         border: "2px solid black",
         boxSizing: "border-box",
-        boxShadow:
-          "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 10px 10px 0 rgba(0,0,0,0.7)",
+        boxShadow: isMobile
+        ? "0 8px 30px rgba(0,0,0,0.5)"
+        : "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff, 10px 10px 0 rgba(0,0,0,0.7)",
         fontFamily: "'Share Tech Mono', 'OCR A Std', monospace",
         color: "black",
         zIndex: 300,
@@ -723,23 +933,48 @@ function FileExplorer({ onClose, startFolder = "Downloads" }: { onClose: () => v
             }}
           >
             {currentFolder === "Downloads" && (
-              <div
-                onClick={() => setCurrentFolder("shop")}
-                style={{ width: 92, textAlign: "center", cursor: "pointer", userSelect: "none" }}
-              >
-                <div
-                  style={{
-                    width: 54,
-                    height: 38,
-                    margin: "0 auto 8px",
-                    background: "#f5d76e",
-                    border: "2px solid black",
-                    boxShadow: "inset -2px -2px 0 #b59b35, inset 2px 2px 0 #fff4a8",
-                  }}
-                />
-                <div style={{ fontSize: "0.82rem", fontWeight: 900 }}>shop</div>
-              </div>
-            )}
+  <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+    <div
+      onClick={() => setCurrentFolder("shop")}
+      style={{ width: 92, textAlign: "center", cursor: "pointer", userSelect: "none" }}
+    >
+      <div
+        style={{
+          width: 54,
+          height: 38,
+          margin: "0 auto 8px",
+          background: "#f5d76e",
+          border: "2px solid black",
+          boxShadow: "inset -2px -2px 0 #b59b35, inset 2px 2px 0 #fff4a8",
+        }}
+      />
+      <div style={{ fontSize: "0.82rem", fontWeight: 900 }}>shop</div>
+    </div>
+
+    <div
+      onClick={onOpenGame}
+      style={{ width: 92, textAlign: "center", cursor: "pointer", userSelect: "none" }}
+    >
+      <div
+        style={{
+          width: 46,
+          height: 46,
+          margin: "0 auto 8px",
+          background: "#c0c0c0",
+          border: "2px solid black",
+          boxShadow: "inset -2px -2px 0 #808080, inset 2px 2px 0 #ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 900,
+        }}
+      >
+        EXE
+      </div>
+      <div style={{ fontSize: "0.82rem", fontWeight: 900 }}>game.exe</div>
+    </div>
+  </div>
+)}
 
             {currentFolder === "shop" && (
               <div style={{ fontSize: "0.9rem", opacity: 0.7 }}>empty folder</div>
@@ -761,6 +996,7 @@ export default function App() {
   const [showExplorer, setShowExplorer] = useState(false);
   const [explorerUnlocked, setExplorerUnlocked] = useState(false);
   const [explorerStartFolder, setExplorerStartFolder] = useState("Downloads");
+  const [showGame, setShowGame] = useState(false);
   const dragRef = useRef<DragData | null>(null);
 
   useEffect(() => {
@@ -827,35 +1063,35 @@ export default function App() {
     };
   }, []);
 
-useEffect(() => {
-  if (!entered) return;
-
-  setCountdown(5);
-  setJustKidding(false);
-  setShowMessage(true);
-  setShowCountdown(false); // ⬅️ start hidden
-  setShowExplorer(false);
-  setExplorerUnlocked(false);
-  setExplorerStartFolder("Downloads");
-
-  // ⬇️ wait 1 second after COMING SOON appears
-  const delayStart = setTimeout(() => {
-    setShowCountdown(true);
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setJustKidding(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, 1000); // ⬅️ THIS is the 1 second delay
-
-  return () => clearTimeout(delayStart);
-}, [entered]);
+  useEffect(() => {
+    if (!entered) return;
+  
+    setCountdown(5);
+    setJustKidding(false);
+    setShowMessage(true);
+    setShowCountdown(false); // ⬅️ start hidden
+    setShowExplorer(false);
+    setExplorerUnlocked(false);
+    setExplorerStartFolder("Downloads");
+  
+    // ⬇️ wait 1 second after COMING SOON appears
+    const delayStart = setTimeout(() => {
+      setShowCountdown(true);
+  
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setJustKidding(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }, 1000); // ⬅️ THIS is the 1 second delay
+  
+    return () => clearTimeout(delayStart);
+  }, [entered]);
 
   useEffect(() => {
     if (!justKidding) return;
@@ -935,8 +1171,11 @@ useEffect(() => {
             <FileExplorer
               startFolder={explorerStartFolder}
               onClose={() => setShowExplorer(false)}
+              onOpenGame={() => setShowGame(true)}
             />
           )}
+          {showGame && <GameWindow onClose={() => setShowGame(false)} />}
+        
         </>
       )}
     </div>
